@@ -1,0 +1,241 @@
+---
+title: 'PHC6050C: Homework 1'
+author: "Valery Lynn"
+date: "August 27, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+####This is an R Markdown document with solutions for end of chapter questions from Faraway Chapter 1.
+
+
+####Instructions: 
+
+1. Complete exercises 1 and 3 at the end of Chapter 1 (pg 12). 
+2. You may submit this assignment as a Word document, but we will eventually fully transition to R Markdown. 
+3. If you want to give it a try, check out the tutorial and go for it! 
+
+####APPROACH:  I'm going for it!!
+
+##Question 1
+
+```{r}
+
+#Load the file from the Faraway package
+data(teengamb, package="faraway")
+head(teengamb)
+```
+
+
+```{r}
+
+#Look at summary statistics for the variables
+summary(teengamb)
+```
+
+
+Look at each variable to see if anything unusual is present. 
+
+OBSERVATIONS:  
+1. It looks like sex is a categorical variable, most likely 1s and 0s to represent male or female.  
+2. Status ranges from 18 to 75. I'm not sure what this is measuring, I will look for a data dictionary with an explanation of what each variable measures.  
+3. Income ranges from 0.6 to 15. This is a strange number for income so I suspect it is an adjusted rate.  
+4. Verbal ranges from 1 to 10. This may be from a standardized test of verbal ability. Strange that the dataset doesn't also contain math ability.  
+5. Gamble ranges from 0 to 156. I assume this is a measure of gambling addiction. Odd range. The mean is 19.3, so there looks to be some outliers in this column.  
+
+FOLLOW UP:  
+
+  I found a description of the data at   https://www.rdocumentation.org/packages/faraway/versions/1.0.7/topics/teengamb  
+  
+ 
+This data frame contains the following columns:  
+
+Variable Name | Description
+--------------|-----------------------------
+sex           |0=male, 1=female
+status        |Socioeconomic status score based on parents' occupation
+income        |in pounds per week
+verbal        |verbal score in words out of 12 correctly defined
+gamble        |expenditure on gambling in pounds per year
+              |
+Source:  *Ide-Smith & Lea, 1988, Journal of Gambling Behavior, 4, 110-118*  
+
+Documentation reproduced from package faraway, version 1.0.7, License: GPL  
+
+CONCLUSION:  
+Most of my preliminary observations were on point. Gamble isn't a measure, it's actual expenditure (in British pounds) per week. I'm curious about the Income variable - the values are low so I am assuming this is the teen's income and not the parents (status is based on the parent's occupation).
+
+I will now designate the Sex variable as a factor.  
+
+```{r}
+#Sex as factor
+teengamb$sex <- factor(teengamb$sex)
+summary(teengamb$sex)
+```
+
+      
+MISSING VALUES  
+
+Gamble has a minimum of 0, however this is a reasonable value for someone who does not gamble.  
+
+A look at the published article shows that they excluded surveys that included missing data, so there is no need to replace any values with NA. Also, Income is based on the teen's income - pocket money or small job. The article states that 93% of boys and 84% of girls reported gambling, so 0s in the data would count as not gambling.
+
+VISUALIZATION
+
+The following is a set of visualizations for each variable along with their relationship to gambling.My main goal is to determine if the data are normal. I will conclude with a discussion of my findings compared to the published findings. The first visualization is for the effect of sex on gambling. A barchart of this data doesn't reveal any new information from the summary data so it would be redundant.
+
+```{r}
+
+# Boxplot of Sex data (28 Male, 19 Female)
+plot(gamble ~ sex, teengamb)
+
+```
+
+
+OBSERVATION:
+
+This suggests that more boys than girls more heavily gambled, spending more money per year. There is one outlier for each sex with a much higher amount in the boys. The IQR is larger in the boys, suggesting more variability for boys than for girls. Consistent with the study, there were more boys gambling than girls.
+
+Now I will look at Status:
+
+```{r}
+
+hist(teengamb$status, xlab="Status", main="")
+```
+
+
+```{r}
+
+plot(density(teengamb$status, na.rm=TRUE), xlab="Status", main="")
+```
+
+
+OBSERVATION:  
+Status is fairly flat and bimodal. The sample size it small = 47, so this could approach normal with a larger sample. 
+
+Now I will look at the relationship between status and gambling. Could status be used to predict teen gambling behavior? 
+
+```{r} 
+
+plot(gamble ~ status, teengamb)
+```
+
+
+CONCLUSION:
+
+Status does not seem to predict gambling on its own. Let's see if sex has an effect with status.
+
+
+```{r}
+
+library("ggplot2")
+
+ggplot(teengamb, aes(x=status, y=gamble)) + geom_point(size=1) + facet_grid(~sex)
+```
+
+
+CONCLUSION:  
+Hmmmmm. A downward trend for boys suggesting that higher gambling is seen for lower status. But the spread is wide, as suggested by the larger IQR in the boxplot. There does not seem to be a strong relationship between status and gambling in girls. Perhaps a very weak positive relationship. This is a very small sample so I would show caution here.
+
+Let's look at income now. One hypothesis at this point would be that higher status families would mean higher teen income through pocket money, but lower status families often have teens that work so this may not hold.
+
+```{r}
+
+hist(teengamb$income, xlab="Income", main="")
+```
+
+```{r}
+
+plot(density(teengamb$income, na.rm=TRUE), xlab="Income", main="")
+```
+
+
+OBSERVATIONS:
+
+This distribution is skewed right. The range is from 0.6 to 15 pounds per week with most of the data falling between 0 and 4 pounds. Let's see if there is a relationship between income and family status.
+
+```{r}
+
+plot(income ~ status, teengamb)
+
+```
+
+CONCLUSION:  
+
+As I thought, status does not seem to predict income probably due to lower status teens tending to hold after school jobs and higher status teens having more pocket money. Caution: I'm not making causal claims, just positing possible explanations. Let's see if sex plays a role.
+
+```{r}
+
+ggplot(teengamb, aes(x=status, y=income)) + geom_point(size=1) + facet_grid(~sex)
+
+```
+
+OBSERVATION:  
+
+A stronger positive relationship is seen for girls, income decreases as status increases. The spread is wide. There doesn't seem to be much of relationship in boys unless you remove the two outliers (15), then it follows a similar trend as the girls where lower status predicts higher teen income, possibly because of after-school jobs. But there is alot of variablity (spread) for both girls and boys.  
+
+Now we will turn our attention to the relationship between income and gambling.
+
+```{r}
+
+plot(gamble ~ income, teengamb)
+
+```
+
+OBSERVATION:  
+
+There does seem to be a positive relationship between teen income and gambling.  
+
+Now I will look at verbal scores and gambling. The published article used verbal scores as a measure of intelligence. This is a bit dated, the article is from 1988. One hypothesis would be that less intelligent students would gamble more. Perhaps because more intelligent students would spend more time studying and have less time to gamble or earn income to gamble with. Let's see if that holds. 
+
+```{r}
+
+hist(teengamb$verbal, xlab="Verbal Score", main="")
+
+```
+
+```{r}
+plot(density(teengamb$verbal, na.rm=TRUE), xlab="Verbal Score", main="")
+
+```
+
+
+OBSERVATION:  
+
+This distribution is skewed left with the majority of scores between 6 and 8 (of 12). Next we will see if there is a relationship between intelligence and gambling:
+
+```{r}
+
+plot(gamble ~ verbal, teengamb)
+
+```
+
+CONCLUSION:  
+
+There does not seem to be a relationship between gambling and intelligence. Let's see if sex plays a role:
+
+```{r}
+
+ggplot(teengamb, aes(x=verbal, y=gamble)) + geom_point(size=1) + facet_grid(~sex)
+
+```
+
+
+CONCLUSIONS:  
+
+A Ha! There seems to be a negative relationship between intelligence and gambling in boys. This is interesting and warrants a closer look. This may be because there were fewer girls in the study, or possibly a selection bias in girls. I would want to see if a different sampling method would have produced the same results.  
+
+Now a quick look at what the original researchers concluded:  
+
+1. Sex differences were reported as highly significant using both simple t-tests and multiple regression analysis. This was consistent with what I saw in the data.  
+2. Income was found to be a strong effect.This was consistent with what I saw in the data.   
+3. The study reported no effect from status or intelligence, but they did not control for sex differences in these categories, as I did and found possible effects for boys but not girls.  
+
+##Question 3  
+
+
+
+
+
