@@ -1,0 +1,373 @@
+---
+title: 'PHC6050C: Homework 1'
+author: "Valery Lynn"
+date: "August 27, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+####This is an R Markdown document with solutions for end of chapter questions from Faraway Chapter 1.
+
+
+####Instructions: 
+
+1. Complete exercises 1 and 3 at the end of Chapter 1 (pg 12). 
+2. You may submit this assignment as a Word document, but we will eventually fully transition to R Markdown. 
+3. If you want to give it a try, check out the tutorial and go for it! 
+
+####APPROACH:  I'm going for it!!
+
+##Question 1
+
+This is a dataset from a study on teenage gambling in Britain.
+
+```{r}
+
+#Load the file from the Faraway package
+data(teengamb, package="faraway")
+head(teengamb)
+```
+
+
+```{r}
+
+#Look at summary statistics for the variables
+summary(teengamb)
+```
+
+
+Look at each variable to see if anything unusual is present. 
+
+OBSERVATIONS:  
+1. It looks like sex is a categorical variable, most likely 1s and 0s to represent male or female.  
+2. Status ranges from 18 to 75. I'm not sure what this is measuring, I will look for a data dictionary with an explanation of what each variable measures.  
+3. Income ranges from 0.6 to 15. This is a strange number for income so I suspect it is an adjusted rate.  
+4. Verbal ranges from 1 to 10. This may be from a standardized test of verbal ability. Strange that the dataset doesn't also contain math ability.  
+5. Gamble ranges from 0 to 156. I assume this is a measure of gambling addiction. Odd range. The mean is 19.3, so there looks to be some outliers in this column.  
+
+FOLLOW UP:  
+
+  I found a description of the data at   https://www.rdocumentation.org/packages/faraway/versions/1.0.7/topics/teengamb  
+  
+ 
+This data frame contains the following columns:  
+
+Variable Name | Description
+--------------|-----------------------------
+sex           |0=male, 1=female
+status        |Socioeconomic status score based on parents' occupation
+income        |in pounds per week
+verbal        |verbal score in words out of 12 correctly defined
+gamble        |expenditure on gambling in pounds per year
+              |
+Source:  *Ide-Smith & Lea, 1988, Journal of Gambling Behavior, 4, 110-118*  
+
+Documentation reproduced from package faraway, version 1.0.7, License: GPL  
+
+CONCLUSION:  
+Most of my preliminary observations were on point. Gamble isn't a measure, it's actual expenditure (in British pounds) per week. I'm curious about the Income variable - the values are low so I am assuming this is the teen's income and not the parents (status is based on the parent's occupation).
+
+I will now designate the Sex variable as a factor.  
+
+```{r}
+#Sex as factor
+teengamb$sex <- factor(teengamb$sex)
+summary(teengamb$sex)
+```
+
+      
+MISSING VALUES  
+
+Gamble has a minimum of 0, however this is a reasonable value for someone who does not gamble.  
+
+A look at the published article shows that they excluded surveys that included missing data, so there is no need to replace any values with NA. Also, Income is based on the teen's income - pocket money or small job. The article states that 93% of boys and 84% of girls reported gambling, so 0s in the data would count as not gambling.
+
+VISUALIZATION
+
+The following is a set of visualizations for each variable along with their relationship to gambling.My main goal is to determine if the data are normal. I will conclude with a discussion of my findings compared to the published findings. The first visualization is for the effect of sex on gambling. A barchart of this data doesn't reveal any new information from the summary data so it would be redundant.
+
+```{r}
+
+# Boxplot of Sex data (28 Male, 19 Female)
+plot(gamble ~ sex, teengamb)
+
+```
+
+
+OBSERVATION:
+
+This suggests that more boys than girls more heavily gambled, spending more money per year. There is one outlier for each sex with a much higher amount in the boys. The IQR is larger in the boys, suggesting more variability for boys than for girls. Consistent with the study, there were more boys gambling than girls.
+
+Now I will look at Status:
+
+```{r}
+
+hist(teengamb$status, xlab="Status", main="")
+```
+
+
+```{r}
+
+plot(density(teengamb$status, na.rm=TRUE), xlab="Status", main="")
+```
+
+
+OBSERVATION:  
+Status is fairly flat and bimodal. The sample size it small = 47, so this could approach normal with a larger sample. 
+
+Now I will look at the relationship between status and gambling. Could status be used to predict teen gambling behavior? 
+
+```{r} 
+
+plot(gamble ~ status, teengamb)
+```
+
+
+CONCLUSION:
+
+Status does not seem to predict gambling on its own. Let's see if sex has an effect with status.
+
+
+```{r}
+
+library("ggplot2")
+
+ggplot(teengamb, aes(x=status, y=gamble)) + geom_point(size=1) + facet_grid(~sex)
+```
+
+
+CONCLUSION:  
+Hmmmmm. A downward trend for boys suggesting that higher gambling is seen for lower status. But the spread is wide, as suggested by the larger IQR in the boxplot. There does not seem to be a strong relationship between status and gambling in girls. Perhaps a very weak positive relationship. This is a very small sample so I would show caution here.
+
+Let's look at income now. One hypothesis at this point would be that higher status families would mean higher teen income through pocket money, but lower status families often have teens that work so this may not hold.
+
+```{r}
+
+hist(teengamb$income, xlab="Income", main="")
+```
+
+```{r}
+
+plot(density(teengamb$income, na.rm=TRUE), xlab="Income", main="")
+```
+
+
+OBSERVATIONS:
+
+This distribution is skewed right. The range is from 0.6 to 15 pounds per week with most of the data falling between 0 and 4 pounds. Let's see if there is a relationship between income and family status.
+
+```{r}
+
+plot(income ~ status, teengamb)
+
+```
+
+CONCLUSION:  
+
+As I thought, status does not seem to predict income probably due to lower status teens tending to hold after school jobs and higher status teens having more pocket money. Caution: I'm not making causal claims, just positing possible explanations. Let's see if sex plays a role.
+
+```{r}
+
+ggplot(teengamb, aes(x=status, y=income)) + geom_point(size=1) + facet_grid(~sex)
+
+```
+
+OBSERVATION:  
+
+A stronger positive relationship is seen for girls, income decreases as status increases. The spread is wide. There doesn't seem to be much of relationship in boys unless you remove the two outliers (15), then it follows a similar trend as the girls where lower status predicts higher teen income, possibly because of after-school jobs. But there is alot of variablity (spread) for both girls and boys.  
+
+Now we will turn our attention to the relationship between income and gambling.
+
+```{r}
+
+plot(gamble ~ income, teengamb)
+
+```
+
+OBSERVATION:  
+
+There does seem to be a positive relationship between teen income and gambling.  
+
+Now I will look at verbal scores and gambling. The published article used verbal scores as a measure of intelligence. This is a bit dated, the article is from 1988. One hypothesis would be that less intelligent students would gamble more. Perhaps because more intelligent students would spend more time studying and have less time to gamble or earn income to gamble with. Let's see if that holds. 
+
+```{r}
+
+hist(teengamb$verbal, xlab="Verbal Score", main="")
+
+```
+
+```{r}
+plot(density(teengamb$verbal, na.rm=TRUE), xlab="Verbal Score", main="")
+
+```
+
+
+OBSERVATION:  
+
+This distribution is skewed left with the majority of scores between 6 and 8 (of 12). Next we will see if there is a relationship between intelligence and gambling:
+
+```{r}
+
+plot(gamble ~ verbal, teengamb)
+
+```
+
+CONCLUSION:  
+
+There does not seem to be a relationship between gambling and intelligence. Let's see if sex plays a role:
+
+```{r}
+
+ggplot(teengamb, aes(x=verbal, y=gamble)) + geom_point(size=1) + facet_grid(~sex)
+
+```
+
+
+CONCLUSIONS:  
+
+A Ha! There seems to be a negative relationship between intelligence and gambling in boys. This is interesting and warrants a closer look. This may be because there were fewer girls in the study, or possibly a selection bias in girls. I would want to see if a different sampling method would have produced the same results.  
+
+Now a quick look at what the original researchers concluded:  
+
+1. Sex differences were reported as highly significant using both simple t-tests and multiple regression analysis. This was consistent with what I saw in the data.  
+2. Income was found to be a strong effect.This was consistent with what I saw in the data.   
+3. The study reported no effect from status or intelligence, but they did not control for sex differences in these categories, as I did and found possible effects for boys but not girls.  
+
+##Question 3  
+
+This is a dataset from a study on men with prostate cancer who were to receive a radical prostalectomy.
+
+```{r}
+
+#Load the file from the Faraway package
+data(prostate, package="faraway")
+head(prostate)
+```
+
+```{r}
+
+#Look at summary statistics for the variables
+summary(prostate)
+```
+
+Look at each variable to see if anything unusual is present. 
+
+OBSERVATIONS
+
+The variables are numeric except for svi, which appears to be categorical. The min is 0 and the max is 1 so I need to determine what these values stand for. I'm unfamiliar with all of these variables except for age, which runs from 41 to 79. There is an lweight variable but the entries are low, 2.375 to 6.108. Even if these were in Kg and not lbs this would be low for a human. Sometimes weight is measure in stones, which is 14 pounds, but this would still be too low. This might be the weight of the prostrate itself, as a measure. I will need to find a data dictionary to make sense of these variables.
+
+FOLLOW UP
+
+I found the following description:
+
+This data frame contains the following columns:
+
+Variable | Description
+---------|------------
+lcavol   |log(cancer volume)
+lweight  |log(prostate weight)
+age      |age
+lbph     |log(benign prostatic hyperplasia amount)
+svi      |seminal vesicle invasion
+lcp      |log(capsular penetration)
+gleason  |Gleason score
+pgg45    |percentage Gleason scores 4 or 5
+lpsa     |log(prostate specific antigen)
+
+Source *Andrews DF and Herzberg AM (1985): Data. New York: Springer-Verlag*
+
+I was hoping that they would provide units for the weights and volumes, but nevertheless I was correct in assuming it was the weight of the prostrate. The remaining variables are all associated with the progression of cancer. The purpose of this analysis will be to determine a predictor for cancer based on these measurements. 
+
+The Gleason score is used to classify the prostate tumor. It is given a grade of 1 to 10 with 10 being the most likely to grow and spread (the most dangerous type). The way it is calculated is that a pathologist will grade the most common cells from 1 to 5, then give the secondmost common cells another grade and add them together. If there is only one kind of common cell then they will double the value of that score.The data for gleason in this study range from 6 to 10. This is not surprising given that the description of this study is that these men will be receiving a radical prostatectomy. 
+
+The svi is a categorical variable for seminal vesicle invasion. It looks like 0 means no invasion and 1 means invasion. I will now designate it as a factor.
+
+There are several hypotheses that could be tested here. I am curious about the Gleason score and how it relates to the other measures. Since it seems to be a screening or diagnosis tool I will focus on how well it relates to the more physical measures of cancer.
+
+
+```{r}
+#Sex as factor
+prostate$svi <- factor(prostate$svi)
+summary(prostate$svi)
+```
+
+      
+MISSING VALUES  
+
+I was curious about the pgg45 variable. It measures the percentage of Gleason scores that are 4 or 5. A percentage would indicate that there were previous measurements. I searched for the use of this measurement and found that it is a percentage of previous measurements that are at least a 4 or 5. Scores of zero are not likely to be missing values, they mean that there were no previous measurements of 4 or 5.  
+
+VISUALIZATION  
+
+The following is a set of visualizations for each variable along with their relationship to the Gleason score. My main goal is to determine if the data are normal. I will conclude with a discussion of my findings. For this question, I will facet the histograms (small multiples) using ggplot2. I will first make a boxplot for the svi data.
+
+```{r}
+
+# Boxplot of Sex data (28 Male, 19 Female)
+plot(gleason ~ svi, prostate)
+
+```
+
+OBSERVATION
+
+There is variation in the zero score but no variation in the one score. It seems that all of the data where there was seminal invasion had a Gleason score of 7, with the exception of one, with a score of 9. 
+
+HISTOGRAMS OF VARIABLES
+
+This will let us see the distributions of the variables.
+
+
+```{r}
+
+#Remove the svi column
+prostate$svi <- NULL
+
+#Get column names
+colnames(prostate) 
+#Set up a grid for the facets (small multiples)
+#Set up a FOR loop to iterate over the variables
+par(mfrow=c(3,3))
+for (i in 1:ncol(prostate)) {
+  hist(prostate[,i], xlab=colnames(prostate)[i],
+       main=paste("Histogram for", colnames(prostate)[i]),
+       col="lightblue", breaks=20)
+}
+
+```
+
+OBSERVATIONS
+
+lcavol, lweight, and lpsa are normal in shape, with an outlier in lweight of 6. Age is skewed left with high ages having higher frequencies. The most common occuring ages are between 60 and 70. lcp measures capsular penetration and most of the data is quite small. The logs of these values are below zero, however the data do range at steady low frequencies into the upper ranges. lbph and pgg45 data follow the same pattern. Gleason scores are mostly 6 or 7, with only a few at 8 or 9. 
+
+RELATIONSHIPS BETWEEN VARIABLES
+
+One way to see relationships between all the variables is to use a pairs plot. I found ggpairs in the GGally package.
+
+```{r}
+
+GGally::ggpairs(prostate)
+```
+
+OBSERVATIONS
+
+A picture is worth a thousand words and this one was surprising! My initial hypothesis that the Gleason score would be highly correlated to the other measures was not as strongly supported as I first thought. It is mostly correlated to the pgg45 but that is not surprising because they are measuring the same thing. There is a mild correlation with lcp (.515) and lcavol (.432). This would not indicate that the Gleason score alone would be a strong predictor, but in a multivariate analysis it would hold its own.
+
+Other relationships seen in the scatterplots (with their correlations) are:
+
+Variables         | Correlation
+------------------|-------------
+lcavol and lcp    |  0.675
+lcavol and lpsa   |  0.734
+lweight and lbph  |  0.435
+lcp and lpsa      |  0.549
+lcp and pgg45     |  0.632
+
+Age was not strongly correlated to any of the measures, but this is likely because all of the men's ages were over 40. 
+
+Also note that there were ouliers in several of the variables. If these were removed, the associations would likely become stronger. 
+
+CONCLUSIONS
+
+This data lends itself to a multiple regression analysis because there were few strong bivariate correlations, but many moderate correlations that could be used together for prediction. I would also test a classification algorithm to see if it could be trained to predict Gleason scores using the other data. The pgg45 had potential for prediction because it was a measure of having had a history of abnormalities. 
+
