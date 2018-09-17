@@ -1,0 +1,240 @@
+---
+title: "PHC6050C: Homework 2"
+author: "Valery Lynn"
+date: "September 11, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+####This is an R Markdown document with solutions for end of chapter questions from Faraway Chapter 2.
+
+
+## Homework 2 Instructions
+
+1. Complete exercises 1 and 4 at the end of Chapter 2 (pg. 30).
+
+2. For exercise 4, write an R function using a "for" loop (see pg 47 for an example) to compute the residual standard errors LaTeX: \sigma σ  and R2 values of the various models with different numbers of predictors. Plot the trends in these two statistics and comment on the results. 
+
+
+
+This is a dataset from a study on teenage gambling in Britain.
+
+```{r}
+require(faraway)
+#Load the file from the Faraway package
+data(teengamb, package="faraway")
+head(teengamb)
+```
+
+```{r}
+#Get shape of data
+nrow(teengamb)
+ncol(teengamb)
+
+
+```
+
+```{r}
+
+#Set up  the model with gambling as the response variable and sex, status, 
+#income and verbal scores as predictors
+lmod <- lm(gamble ~ sex + status + income + verbal, data=teengamb)
+
+summary(lmod)
+```
+
+### 1. (a)  What percentage of variation in the response is explained by these predictors?
+
+Answer:  The r-squared value is 0.53. This means that 53% of the variation is explained by these predictors, and 47% is explained by random and unexplained factors.
+
+### 1. (b) Which observation has the largest (positive) residual? Give the case number.
+
+```{r}
+
+teengamb$res <- residuals(lmod) # Save the residual values
+
+# Print the residual values
+library(dplyr)
+teengamb %>% select(res)
+
+```
+
+Answer:  The largest positive residual is case # 24 => 94.2522174
+
+### 1. (c) Compute the mean and median of the residuals.
+
+```{r}
+teengamb$res <- residuals(lmod) # Save the residual values
+resmean <- mean(teengamb$res)
+resmed <- median(teengamb$res)
+
+cat("Mean of residuals: ", resmean)
+cat("\n")
+cat("Median of residuals: ", resmed)
+```
+Answer:  This looks good. The previous output in summary() had the same median. The mean is very close to zero, which is what we want.
+
+### 1. (d)  Compute the correlation of the residuals with the fitted values.
+
+```{r}
+fit = fitted.values(lmod)
+
+cor.test(teengamb$res, fit, method = "pearson")
+```
+
+
+```{r}
+
+library(ggplot2)
+ggplot(teengamb,aes(x = res, y = fit)) +  
+  geom_point() 
+```
+
+CONCLUSION:  There is no correlation between the fitted values and the residuals. Pearson r value is -1.20986e-18 (nearly zero).
+
+
+
+### 1. (e)  Compute the correlation of the residuals with the income.
+
+```{r}
+
+cor.test(teengamb$res, teengamb$income, method = "pearson")
+```
+
+```{r}
+library(ggplot2)
+ggplot(teengamb,aes(x = res, y = income)) +  
+  geom_point() 
+  
+```
+  
+  CONCLUSION:  There is no correlation between income and the residuals. Pearson r value is 2.352278e-17 (nearly zero).
+
+### 1. (f)  For all other predictors held constant, what would be the difference in predicted expenditure on gambling for a male compared to a female?
+
+```{r}
+#Set up  the model with gambling as the response variable and sex as predictors
+lmodsex <- lm(gamble ~ sex, data=teengamb)
+
+summary(lmodsex)
+```
+
+ANSWER:  For boys, x = 0 and for girls, x = 1. When x = 0 (boys), the predicted y value (expenditure on gambling in pounds per year) is £29.775/year. When x = 1 (girls), the predicted y value is £29.775 - 25.909 = £3.866
+
+CAVEAT:  The R-squared value is quite low, 0.1663. Which means that this model accounts for only 16.63% of the variation in the response variable.
+
+### 2. For exercise 4, write an R function using a "for" loop (see pg 47 for an example) to compute the residual standard errors LaTeX: \sigma σ  and R2 values of the various models with different numbers of predictors. Plot the trends in these two statistics and comment on the results. 
+
+This is a dataset from a study on 97 men with prostate cancer who were due to receive a radical prostatectomy.
+
+```{r}
+#Load the file from the Faraway package
+data(prostate, package="faraway")
+head(prostate)
+```
+
+
+### 4. Fit a model with lpsa as the response and lcavol as the predictor.
+
+```{r}
+#Set up  the model with gambling as the response variable and sex as predictors
+lmodprost <- lm(lpsa ~ lcavol, data=prostate)
+
+sum <- summary(lmodprost)
+sum
+```
+
+### Record the residual standard error and the R-Squared
+```{r}
+ser <- sum$sigma
+rsrd <- sum$r.squared
+cat("The Residual standard error is:  ", ser)
+cat("The R-Squared value is:  ", rsrd)
+```
+
+### Add the features one by one and calculate the standard error of the residuals and the R-squared values.
+
+NOTE:  I couldn't get the values to calculate inside a for loop. I kept getting null values. I used a for loop to print out the values in the next chunk. I would love to see code that works. Do you post solutions?
+
+```{r}
+lmodprost1 <- lm(lpsa ~ lcavol, data=prostate)
+sum1 <- summary(lmodprost1)
+ser1 <- sum1$sigma
+res1 <- sum1$r.squared
+lmodprost2 <- lm(lpsa ~ lcavol + lweight, data=prostate)
+sum2 <- summary(lmodprost2)
+ser2 <- sum2$sigma
+res2 <- sum2$r.squared
+lmodprost3 <- lm(lpsa ~ lcavol + lweight + svi, data=prostate)
+sum3 <- summary(lmodprost3)
+ser3 <- sum3$sigma
+res3 <- sum3$r.squared
+lmodprost4 <- lm(lpsa ~ lcavol + lweight + svi + lbph, data=prostate)
+sum4 <- summary(lmodprost4)
+ser4 <- sum4$sigma
+res4 <- sum4$r.squared
+lmodprost5 <- lm(lpsa ~ lcavol + lweight + svi + lbph + age, data=prostate)
+sum5 <- summary(lmodprost5)
+ser5 <- sum5$sigma
+res5 <- sum5$r.squared
+lmodprost6 <- lm(lpsa ~ lcavol + lweight + svi + lbph + age + lcp, data=prostate)
+sum6 <- summary(lmodprost6)
+ser6 <- sum6$sigma
+res6 <- sum6$r.squared
+lmodprost7 <- lm(lpsa ~ lcavol + lweight + svi + lbph + age + lcp + pgg45, data=prostate)
+sum7 <- summary(lmodprost7)
+ser7 <- sum7$sigma
+res7 <- sum7$r.squared
+lmodprost8 <- lm(lpsa ~ lcavol + lweight + svi + lbph + age + lcp + pgg45 + gleason, data=prostate)
+sum8 <- summary(lmodprost8)
+ser8 <- sum8$sigma
+res8 <- sum8$r.squared
+```
+
+I know this isn't the for loop you were looking for. I fought with it for hours before deciding just to use it to print out the values. 
+
+
+
+```{r}
+serlist = list(ser1, ser2, ser3, ser4, ser5, ser6, ser7, ser8)
+reslist = list(res1, res2, res3, res4, res5, res6, res7, res8)
+for(i in 1:8){
+  cat("lmodprost",i)
+  cat("\n")
+  print("Standard error of residuals")
+  print(serlist[i])
+  cat("\n")
+  print("R-squared value")
+  print(reslist[i])
+  cat("\n")
+
+}
+
+```
+
+
+
+```{r}
+serlist = list(ser1, ser2, ser3, ser4, ser5, ser6, ser7, ser8)
+reslist = list(res1, res2, res3, res4, res5, res6, res7, res8)
+
+# Graph standard error of the mean
+plot(unlist(serlist), type="o", col="blue", ann=FALSE, ylim=c(.4,1))
+
+# Graph r-squared values
+lines(unlist(reslist), type="o", col="red")
+
+# Create a title with a red, bold/italic font
+title(main="Standard error of residuals and R-squared values as features are added.", font.main=4, xlab="Number of Features")
+
+legend(1, c("standard Error of Residuals","R-Squared values"), cex=0.8, 
+   col=c("blue","red"), pch=21:22, lty=1:2)
+
+```
+
+CONCLUSION:  We want a high R-squared value, and a low standard error of the residuals. As we add features to the model, R-squared goes up and then tapers off. Also, standard error of the residuals goes down and tapers off. The best fit is happening between 3 and 4 features. After that we risk over-fitting the model and there's not much more to be gained. However, it is possible that we could further optimize the model by trying different ordering for the features. If we are going to use 4, for example, we should try to use the 4 that give the best results.
